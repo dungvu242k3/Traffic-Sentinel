@@ -1,0 +1,4 @@
+uvicorn app.main:app --reload
+python run_consumer.py
+python -m  AI_service.main
+index.html + with live server

@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="vi" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trung tâm Giám sát Giao thông Thông minh</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="http://127.0.0.1:8000/static/favicon.ico" type="image/x-icon">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/FE/css/index.css">
+</head>
+<body class="h-full bg-slate-900 text-white">
+    <!-- Main Layout Container -->
+    <div class="flex h-full" id="app-container">
+        <!-- Left Sidebar Navigation -->
+        <aside class="w-64 sidebar border-r border-slate-700/50 flex flex-col">
+            <!-- Logo Section -->
+            <div class="p-6 border-b border-slate-700/50">
+                <div class="flex items-center space-x-3">
+                    <div class="relative">
+                        <i class="fas fa-traffic-light text-2xl text-blue-400"></i>
+                        <div class="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full status-indicator"></div>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                            Traffic Center
+                        </h1>
+                        <p class="text-xs text-slate-400">AI Monitoring System</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Menu -->
+            <nav class="flex-1 p-4 space-y-2">
+                <button onclick="showView('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center px-4 py-3 rounded-xl text-sm font-medium text-left active">
+                    <i class="fas fa-th-large mr-3 text-blue-400"></i>
+                    <span>Dashboard Giám sát</span>
+                </button>
+                <button onclick="showView('cameras')" id="nav-cameras" class="nav-btn w-full flex items-center px-4 py-3 rounded-xl text-sm font-medium text-left">
+                    <i class="fas fa-video mr-3 text-blue-400"></i>
+                    <span>Quản lý Camera</span>
+                </button>
+                <button onclick="showView('violations')" id="nav-violations" class="nav-btn w-full flex items-center px-4 py-3 rounded-xl text-sm font-medium text-left">
+                    <i class="fas fa-exclamation-triangle mr-3 text-red-400"></i>
+                    <span>Nhật ký Vi phạm</span>
+                </button>
+                <button onclick="showView('settings')" id="nav-settings" class="nav-btn w-full flex items-center px-4 py-3 rounded-xl text-sm font-medium text-left">
+                    <i class="fas fa-cog mr-3 text-slate-400"></i>
+                    <span>Cài đặt Hệ thống</span>
+                </button>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 main-content">
+            <!-- Top Header -->
+            <header class="glass-effect border-b border-slate-700/50 px-6 py-4 sticky top-0 z-30">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="relative">
+                            <i class="fas fa-traffic-light text-3xl text-blue-400"></i>
+                            <div class="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full status-indicator"></div>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                                Trung tâm Giám sát Giao thông
+                            </h1>
+                            <p class="text-xs text-slate-400">Hệ thống AI Thông minh</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-6">
+                        <div class="text-sm text-slate-300 flex items-center space-x-2">
+                            <i class="fas fa-clock text-blue-400"></i>
+                            <span id="current-time" class="font-mono"></span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 bg-green-400 rounded-full status-indicator"></div>
+                            <span class="text-sm font-medium text-green-400">Trực tuyến</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard View -->
+            <div id="dashboard-view" class="view-content">
+                <!-- Event Ticker -->
+                <div class="bg-gradient-to-r from-red-600 to-red-700 text-white py-3 overflow-hidden shadow-lg">
+                    <div class="ticker-scroll whitespace-nowrap">
+                        <span class="inline-block px-8 text-sm font-medium" id="event-ticker">
+                            Hệ thống đang hoạt động bình thường - Không có vi phạm mới
+                        </span>
+                    </div>
+                </div>
+
+                <div class="flex h-full">
+                    <!-- Video Grid Area -->
+                    <div class="flex-1 p-6">
+                        <!-- Grid Controls -->
+                        <div class="mb-6 flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <select id="district-filter" class="bg-slate-800/50 border border-slate-600/50 rounded-xl px-4 py-2 text-white">
+                                    <option value="">Tất cả quận</option>
+                                </select>
+                                <select id="grid-size" class="bg-slate-800/50 border border-slate-600/50 rounded-xl px-4 py-2 text-white">
+                                    <option value="2x2">Lưới 2x2</option>
+                                    <option value="3x3" selected>Lưới 3x3</option>
+                                    <option value="4x4">Lưới 4x4</option>
+                                </select>
+                            </div>
+                            <div class="text-sm text-slate-300">
+                                <span id="camera-count">0</span> camera đang hoạt động
+                            </div>
+                        </div>
+
+                        <!-- Video Grid -->
+                        <div id="video-grid" class="grid grid-cols-3 gap-6 h-full items-start">
+                            <div class="col-span-3 text-center text-slate-400 py-20">
+                                <i class="fas fa-video text-6xl mb-4"></i>
+                                <p class="text-lg">Chưa có camera nào được thêm vào hệ thống</p>
+                                <p class="text-sm mt-2">Vui lòng vào trang "Quản lý Camera" để thêm camera mới</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Sidebar -->
+                    <aside class="w-80 sidebar border-l border-slate-700/50 p-6">
+                        <h3 class="text-lg font-semibold mb-4">Thống kê Hệ thống</h3>
+                        <div class="space-y-4">
+                            <div class="glass-effect rounded-xl p-4">
+                                <div class="text-2xl font-bold text-green-400" id="active-cameras">0</div>
+                                <div class="text-xs text-slate-400">Camera hoạt động</div>
+                            </div>
+                            <div class="glass-effect rounded-xl p-4">
+                                <div class="text-2xl font-bold text-red-400" id="total-violations">0</div>
+                                <div class="text-xs text-slate-400">Vi phạm hôm nay</div>
+                            </div>
+                        </div>
+
+                        <h3 class="text-lg font-semibold mb-4 mt-8">Vi phạm Gần đây</h3>
+                        <div id="recent-violations" class="space-y-2">
+                            <div class="text-center text-slate-400 py-8">
+                                <i class="fas fa-check-circle text-4xl mb-2"></i>
+                                <p>Không có vi phạm mới</p>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+
+            <!-- Camera Management View -->
+            <div id="cameras-view" class="view-content hidden">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-blue-400">Quản lý Camera</h2>
+                        <button onclick="showAddCameraModal()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-medium transition-colors">
+                            <i class="fas fa-plus mr-2"></i>Thêm Camera
+                        </button>
+                    </div>
+
+                    <!-- Search Bar -->
+                    <div class="mb-6">
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                            <input type="text" id="camera-search" placeholder="Tìm kiếm camera..." 
+                                   class="w-full bg-slate-800/50 border border-slate-600/50 rounded-xl pl-10 pr-4 py-3 text-white">
+                        </div>
+                    </div>
+
+                    <!-- Camera Table -->
+                    <div class="glass-effect rounded-2xl overflow-hidden">
+                        <table class="w-full">
+                            <thead class="bg-slate-800/50 border-b border-slate-700/50">
+                                <tr>
+                                    <th class="px-6 py-4 text-left text-xs font-medium text-slate-300 uppercase">Tên Camera</th>
+                                    <th class="px-6 py-4 text-left text-xs font-medium text-slate-300 uppercase">Quận</th>
+                                    <th class="px-6 py-4 text-left text-xs font-medium text-slate-300 uppercase">URL Stream</th>
+                                    <th class="px-6 py-4 text-left text-xs font-medium text-slate-300 uppercase">Trạng thái</th>
+                                    <th class="px-6 py-4 text-left text-xs font-medium text-slate-300 uppercase">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="camera-table-body" class="divide-y divide-slate-700/50">
+                                <tr>
+                                    <td colspan="5" class="px-6 py-12 text-center text-slate-400">
+                                        <i class="fas fa-video text-4xl mb-4"></i>
+                                        <p>Chưa có camera nào được thêm vào hệ thống</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Violations View -->
+            <div id="violations-view" class="view-content hidden">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-red-400">Nhật ký Vi phạm</h2>
+                        <button class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-medium transition-colors">
+                            <i class="fas fa-download mr-2"></i>Xuất báo cáo
+                        </button>
+                    </div>
+
+                    <!-- Advanced Filters -->
+                    <div class="glass-effect rounded-2xl p-6 mb-6">
+                        <h3 class="text-lg font-semibold mb-4">Bộ lọc Nâng cao</h3>
+                        <div class="grid grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-300 mb-2">Từ ngày</label>
+                                <input type="date" id="date-from" class="w-full bg-slate-800/50 border border-slate-600/50 rounded-xl px-4 py-2 text-white">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-300 mb-2">Đến ngày</label>
+                                <input type="date" id="date-to" class="w-full bg-slate-800/50 border border-slate-600/50 rounded-xl px-4 py-2 text-white">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-300 mb-2">Quận</label>
+                                <select id="violation-district-filter" class="w-full bg-slate-800/50 border border-slate-600/50 rounded-xl px-4 py-2 text-white">
+                                    <option value="">Tất cả quận</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-300 mb-2">Loại vi phạm</label>
+                                <select id="violation-type-filter" class="w-full bg-slate-800/50 border border-slate-600/50 rounded-xl px-4 py-2 text-white">
+                                    <option value="">Tất cả loại</option>
+                                    <option value="red-light">Vượt đèn đỏ</option>
+                                    <option value="wrong-lane">Sai làn đường</option>
+                                    <option value="speeding">Vượt tốc độ</option>
+                                    <option value="no-helmet">Không đội mũ bảo hiểm</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex justify-end">
+                            <button onclick="filterViolations()" class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg font-medium transition-colors">
+                                <i class="fas fa-filter mr-2"></i>Áp dụng bộ lọc
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Violations Grid -->
+                    <div id="violations-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="col-span-full text-center text-slate-400 py-20">
+                            <i class="fas fa-check-circle text-6xl mb-4"></i>
+                            <p class="text-lg">Không có vi phạm nào được ghi nhận</p>
+                            <p class="text-sm mt-2">Hệ thống đang hoạt động bình thường</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div id="settings-view" class="view-content hidden">
+                <div class="p-6">
+                    <h2 class="text-2xl font-bold text-purple-400 mb-6">Cài đặt Hệ thống</h2>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- System Configuration -->
+                        <div class="glass-effect rounded-2xl p-6">
+                            <h3 class="text-lg font-semibold text-blue-400 mb-4 flex items-center">
+                                <i class="fas fa-server mr-3"></i>
+                                Cấu hình Hệ thống
+                            </h3>
+                            
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-300 mb-2">Tần suất cập nhật (giây)</label>
+                                    <input type="number" id="refresh-rate" value="5" min="1" max="60" 
+                                           class="w-full bg-slate-800/50 border border-slate-600/50 rounded-xl px-4 py-3 text-white">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-300 mb-2">Chất lượng video mặc định</label>
+                                    <select id="video-quality" class="w-full bg-slate-800/50 border border-slate-600/50 rounded-xl px-4 py-3 text-white">
+                                        <option value="720p">HD (720p)</option>
+                                        <option value="1080p" selected>Full HD (1080p)</option>
+                                        <option value="4k">4K Ultra HD</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-300 mb-2">Thời gian lưu trữ video (ngày)</label>
+                                    <input type="number" id="storage-days" value="30" min="1" max="365" 
+                                           class="w-full bg-slate-800/50 border border-slate-600/50 rounded-xl px-4 py-3 text-white">
+                                </div>
+                                
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-medium text-slate-300">Tự động phát hiện vi phạm</span>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="auto-detection" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AI Configuration -->
+                        <div class="glass-effect rounded-2xl p-6">
+                            <h3 class="text-lg font-semibold text-green-400 mb-4 flex items-center">
+                                <i class="fas fa-brain mr-3"></i>
+                                Cấu hình AI
+                            </h3>
+                            
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-300 mb-2">Loại vi phạm theo dõi</label>
+                                    <div class="space-y-2">
+                                        <label class="flex items-center">
+                                            <input type="checkbox" class="rounded bg-slate-600 border-slate-500 text-blue-600 focus:ring-blue-500">
+                                            <span class="ml-2 text-sm text-slate-300">Vượt đèn đỏ</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="checkbox" class="rounded bg-slate-600 border-slate-500 text-blue-600 focus:ring-blue-500">
+                                            <span class="ml-2 text-sm text-slate-300">Sai làn đường</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="checkbox" class="rounded bg-slate-600 border-slate-500 text-blue-600 focus:ring-blue-500">
+                                            <span class="ml-2 text-sm text-slate-300">Vượt tốc độ</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="checkbox" class="rounded bg-slate-600 border-slate-500 text-blue-600 focus:ring-blue-500">
+                                            <span class="ml-2 text-sm text-slate-300">Không đội mũ bảo hiểm</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notification Settings -->
+                        <div class="glass-effect rounded-2xl p-6">
+                            <h3 class="text-lg font-semibold text-yellow-400 mb-4 flex items-center">
+                                <i class="fas fa-bell mr-3"></i>
+                                Cài đặt Thông báo
+                            </h3>
+                            
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-medium text-slate-300">Thông báo âm thanh</span>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="sound-notifications" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+                                
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-medium text-slate-300">Thông báo email</span>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="email-notifications" class="sr-only peer">
+                                        <div class="w-11 h-6 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-300 mb-2">Email nhận thông báo</label>
+                                    <input type="email" id="notification-email" placeholder="admin@example.com" 
+                                           class="w-full bg-slate-800/50 border border-slate-600/50 rounded-xl px-4 py-3 text-white">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-300 mb-2">Mức độ ưu tiên thông báo</label>
+                                    <select id="notification-priority" class="w-full bg-slate-800/50 border border-slate-600/50 rounded-xl px-4 py-3 text-white">
+                                        <option value="all">Tất cả vi phạm</option>
+                                        <option value="high" selected>Chỉ vi phạm nghiêm trọng</option>
+                                        <option value="critical">Chỉ vi phạm cực kỳ nghiêm trọng</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+
+
+                        <!-- System Information -->
+                        <div class="glass-effect rounded-2xl p-6 lg:col-span-2">
+                            <h3 class="text-lg font-semibold text-cyan-400 mb-4 flex items-center">
+                                <i class="fas fa-info-circle mr-3"></i>
+                                Thông tin Hệ thống
+                            </h3>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-blue-400">v2.1.0</div>
+                                    <div class="text-sm text-slate-400">Phiên bản hệ thống</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-green-400" id="system-uptime">99.9%</div>
+                                    <div class="text-sm text-slate-400">Thời gian hoạt động</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-purple-400">15.2 GB</div>
+                                    <div class="text-sm text-slate-400">Dung lượng sử dụng</div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 pt-6 border-t border-slate-700/50">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-slate-300">Cập nhật cuối:</span>
+                                    <span class="text-sm text-slate-400">15/12/2024 - 14:30</span>
+                                </div>
+                                <div class="flex justify-between items-center mt-2">
+                                    <span class="text-sm text-slate-300">Khởi động lần cuối:</span>
+                                    <span class="text-sm text-slate-400">14/12/2024 - 08:00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="mt-8 flex justify-end space-x-4">
+                        <button onclick="resetSettings()" class="bg-slate-600 hover:bg-slate-700 px-6 py-3 rounded-xl font-medium transition-colors">
+                            <i class="fas fa-undo mr-2"></i>Khôi phục mặc định
+                        </button>
+                        <button onclick="saveSettings()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl font-medium transition-colors">
+                            <i class="fas fa-save mr-2"></i>Lưu cài đặt
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Camera Modal -->
+    <div id="add-camera-modal" class="modal">
+        <div class="glass-effect rounded-2xl p-6 w-full max-w-md mx-4">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-blue-400">Thêm Camera Mới</h3>
+                <button onclick="hideAddCameraModal()" class="text-slate-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <form id="add-camera-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Tên Camera *</label>
+                    <input type="text" id="camera-name" required 
+                           class="w-full bg-slate-800/50 border border-slate-600/50 rounded-xl px-4 py-3 text-white"
+                           placeholder="Ví dụ: Ngã Tư Sở - Hướng Tây Sơn">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">URL Video Stream *</label>
+                    <input type="url" id="camera-url" required 
+                           class="w-full bg-slate-800/50 border border-slate-600/50 rounded-xl px-4 py-3 text-white"
+                           placeholder="https://example.com/stream">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Quận/Huyện *</label>
+                    <select id="camera-district" required class="w-full bg-slate-800/50 border border-slate-600/50 rounded-xl px-4 py-3 text-white">
+                        <option value="">Chọn quận/huyện</option>
+                        <option value="ba-dinh">Ba Đình</option>
+                        <option value="hoan-kiem">Hoàn Kiếm</option>
+                        <option value="dong-da">Đống Đa</option>
+                        <option value="hai-ba-trung">Hai Bà Trưng</option>
+                        <option value="cau-giay">Cầu Giấy</option>
+                        <option value="thanh-xuan">Thanh Xuân</option>
+                        <option value="hoang-mai">Hoàng Mai</option>
+                        <option value="long-bien">Long Biên</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Ghi chú</label>
+                    <textarea id="camera-notes" rows="3" 
+                              class="w-full bg-slate-800/50 border border-slate-600/50 rounded-xl px-4 py-3 text-white"
+                              placeholder="Ghi chú thêm về camera này..."></textarea>
+                </div>
+                
+                <div class="flex space-x-3 pt-4">
+                    <button type="button" onclick="hideAddCameraModal()" 
+                            class="flex-1 bg-slate-600 hover:bg-slate-700 px-4 py-3 rounded-xl font-medium transition-colors">
+                        Hủy
+                    </button>
+                    <button type="submit" 
+                            class="flex-1 bg-blue-600 hover:bg-blue-700 px-4 py-3 rounded-xl font-medium transition-colors">
+                        Thêm Camera
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Violation Detail Modal -->
+    <div id="violation-detail-modal" class="modal">
+        <div class="glass-effect rounded-2xl p-6 w-full max-w-2xl mx-4">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-red-400">Chi tiết Vi phạm</h3>
+                <button onclick="hideViolationDetailModal()" class="text-slate-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div id="violation-detail-content">
+                <!-- Content will be populated dynamically -->
+            </div>
+        </div>
+    </div>
+    <div id="video-modal" class="modal">
+            <div class="relative w-full h-full max-w-6xl p-4 md:p-8 lg:p-12">
+                <button onclick="hideVideoModal()" class="absolute top-2 right-2 md:top-4 md:right-4 z-20 w-10 h-10 bg-black/50 hover:bg-black/80 rounded-full flex items-center justify-center text-white transition-colors" title="Đóng (Esc)">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+                
+                <div id="video-modal-content" class="w-full h-full bg-black rounded-lg shadow-2xl">
+                    </div>
+            </div>
+        </div>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98eceb4af6ff1fca',t:'MTc2MDUwNjE3MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script src="/FE/js/index.js"></script>
+</body>
+</html>
