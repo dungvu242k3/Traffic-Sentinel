@@ -2,8 +2,6 @@
 import sys
 from pathlib import Path
 
-# Thêm thư mục gốc của dự án vào Python path
-# Điều này cho phép consumer tìm thấy module 'app'
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 

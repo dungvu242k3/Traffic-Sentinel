@@ -1,0 +1,115 @@
+
+services:
+  # 1. Dịch vụ Database PostgreSQL
+  db:
+    image: postgres:15-alpine # Sử dụng image postgres nhẹ
+    container_name: traffic_db
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres} # Lấy từ file .env ở thư mục gốc, hoặc dùng mặc định
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-sat24042003} # Lấy từ file .env, THAY MẬT KHẨU MẶC ĐỊNH
+      POSTGRES_DB: ${DB_NAME:-traffic_db} # Lấy từ file .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Lưu dữ liệu DB kể cả khi container bị xóa
+    ports:
+      - "5433:5432" # Ánh xạ cổng 5433 của máy host vào cổng 5432 của container (tránh trùng nếu bạn đã cài Postgres trên máy)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Dịch vụ Message Queue RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: traffic_rabbitmq
+    ports:
+      - "5672:5672"   # Cổng giao tiếp chính của RabbitMQ
+      - "15672:15672" # Cổng giao diện quản lý web
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 3. Dịch vụ Back-end API (FastAPI)
+  backend:
+    build:
+      context: ./BE # Đường dẫn tới thư mục chứa Dockerfile của BE
+    container_name: traffic_backend
+    env_file:
+      - ./BE/.env # Sử dụng file .env trong thư mục BE
+    environment:
+      # QUAN TRỌNG: Thay đổi host DB thành tên service trong docker-compose
+      DB_HOST: db
+      # (Các biến khác như DB_USER, DB_PASSWORD, DB_NAME sẽ được lấy từ env_file)
+    volumes:
+      - ./BE/static:/app/static # Ánh xạ thư mục static để lưu ảnh và FE truy cập được
+    ports:
+      - "8000:8000" # Ánh xạ cổng 8000 của container ra cổng 8000 của máy host
+    depends_on:
+      db: # Chỉ khởi động BE khi DB đã sẵn sàng
+        condition: service_healthy
+      rabbitmq: # Chỉ khởi động BE khi RabbitMQ đã sẵn sàng
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload # Chạy server FastAPI
+
+  # 4. Dịch vụ Violation Consumer
+  consumer:
+    build:
+      context: ./BE # Dùng chung image với backend vì cùng môi trường
+    container_name: traffic_consumer
+    env_file:
+      - ./BE/.env # Dùng chung file env với backend
+    environment:
+      # QUAN TRỌNG: Thay đổi host DB và RabbitMQ
+      DB_HOST: db
+      RABBITMQ_HOST: rabbitmq # <-- Cần cập nhật code consumer để đọc biến này
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    # Chạy file consumer, cần thêm PYTHONPATH để nó tìm thấy module 'app'
+    command: python -m app.infrastructure.messaging.violation_consumer # <-- Cần sửa lại cách chạy consumer một chút
+
+  # 5. Dịch vụ AI Service
+  ai_service:
+    build:
+      context: ./AI_service
+    container_name: traffic_ai_service
+    environment:
+      # QUAN TRỌNG: Cập nhật địa chỉ API và RabbitMQ
+      API_URL: "http://backend:8000/api/v1/cameras/" # 'backend' là tên service của BE
+      RABBITMQ_HOST: rabbitmq # <-- Cần cập nhật code AI để đọc biến này
+    depends_on:
+      backend:
+        condition: service_started # Chỉ cần BE bắt đầu chạy là được
+      rabbitmq:
+        condition: service_healthy
+    # Chạy file main của AI Service
+    command: python main.py # (Hoặc python -m main nếu cần)
+    # Nếu muốn dùng GPU (Yêu cầu Docker hỗ trợ GPU và image phù hợp):
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  # 6. Dịch vụ Front-end (Dùng Nginx)
+  frontend:
+    image: nginx:alpine # Sử dụng image Nginx nhẹ
+    container_name: traffic_frontend
+    volumes:
+      # Ánh xạ thư mục FE của bạn vào thư mục phục vụ web mặc định của Nginx
+      # :ro nghĩa là chỉ đọc (read-only), an toàn hơn
+      - ./FE:/usr/share/nginx/html:ro 
+    ports:
+      # Ánh xạ cổng 80 của Nginx ra cổng 8080 trên máy tính của bạn
+      - "8080:80" 
+    depends_on:
+      - backend # Đảm bảo backend chạy trước (không bắt buộc, nhưng nên có)
+
+volumes: # Định nghĩa volume để lưu trữ dữ liệu PostgreSQL
+  postgres_data:

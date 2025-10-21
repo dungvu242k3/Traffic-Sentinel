@@ -1,0 +1,12 @@
+# BE/requirements.txt
+
+fastapi
+uvicorn[standard] # Bao gồm cả hỗ trợ websockets và hiệu suất tốt hơn
+sqlalchemy[asyncio] # Cài SQLAlchemy với hỗ trợ asyncio
+asyncpg # Driver bất đồng bộ cho PostgreSQL
+pydantic
+pydantic-settings
+pika # Client cho RabbitMQ
+aiofiles # Để ghi file bất đồng bộ (lưu ảnh vi phạm)
+
+greenlet

@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 
-from .api.endpoints import cameras, violations  # <-- Thêm violations
+from .api.endpoints import cameras, violations
 from .infrastructure.db import schema
 from .infrastructure.db.postgres_setup import Base, engine
 
@@ -15,11 +15,10 @@ app = FastAPI(
 )
 async def create_tables():
     async with engine.begin() as conn:
-        # Import schema ở đây để Base nhận diện được tất cả các bảng
         await conn.run_sync(Base.metadata.create_all)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Trong môi trường production nên giới hạn lại!
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -30,7 +29,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Gắn cả hai router vào ứng dụng
 app.include_router(cameras.router, prefix="/api/v1/cameras", tags=["Cameras"])
-app.include_router(violations.router, prefix="/api/v1/violations", tags=["Violations"]) # <-- Thêm router của violations
+app.include_router(violations.router, prefix="/api/v1/violations", tags=["Violations"])
 
 @app.on_event("startup")
 async def on_startup():

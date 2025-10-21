@@ -1,0 +1,8 @@
+opencv-python
+numpy
+torch
+ultralytics
+pika
+requests
+yt-dlp
+#streamlink

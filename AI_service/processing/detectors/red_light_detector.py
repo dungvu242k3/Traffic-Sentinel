@@ -66,30 +66,25 @@ def process_frame(frame: np.ndarray, frame_count: int):
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
             cv2.circle(frame, center_bottom, 5, (0, 0, 255), -1)
 
-            # Nếu xe chưa được theo dõi, thêm nó vào
             if track_id not in tracked_vehicles:
                 tracked_vehicles[track_id] = []
             
-            # Lưu lại vị trí hiện tại của xe
             tracked_vehicles[track_id].append(center_bottom)
             
-            # Chỉ kiểm tra nếu xe đã có ít nhất 2 vị trí (để xác định hướng đi)
             if len(tracked_vehicles[track_id]) >= 2:
                 prev_pos = tracked_vehicles[track_id][-2]
                 current_pos = tracked_vehicles[track_id][-1]
                 
-                # Kiểm tra xem xe có vượt qua vạch dừng không
                 if crosses_line(prev_pos, current_pos, STOP_LINE) and track_id not in violated_vehicle_ids:
                     print(f"VIOLATION! Vehicle ID {track_id} crossed the line on RED light.")
                     violated_vehicle_ids.add(track_id)
                     
-                    violation_image = frame[y1:y2, x1:x2]
+                    violation_image = frame
                     
-                    # Tạo thông tin vi phạm để trả về
                     violation_info = {
                         "violation_type": "vượt đèn đỏ",
                         "image": violation_image,
-                        "license_plate": "UNKNOWN" # Tạm thời
+                        "license_plate": "UNKNOWN"
                     }
                     return violation_info, frame
 
